@@ -1,6 +1,7 @@
 import socket
 import json
 import math
+import os
 
 class Cliente:
     def __init__(self, servidor_principal_host, servidor_principal_puerto):
@@ -44,12 +45,18 @@ class Cliente:
             mensaje = f"{video_nombre} {inicio} {fin}"
             mensajes.append((ip, puerto, mensaje))
 
+        fragmentos = []
         for ip, puerto, mensaje in mensajes:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((ip, int(puerto)))
                 s.sendall(mensaje.encode())
                 # Recibir el trozo del video
-                self.recibir_trozo_video(s, mensaje)
+                nombre_fragmento = self.recibir_trozo_video(s, mensaje)
+                if nombre_fragmento:
+                    fragmentos.append(nombre_fragmento)
+
+        # Combinar los fragmentos recibidos en un único archivo de video
+        self.combinar_fragmentos(video_nombre, fragmentos)
 
     def recibir_trozo_video(self, sock, mensaje):
         partes = mensaje.split(" ")
@@ -58,16 +65,29 @@ class Cliente:
         fin = int(partes[2])
         tamaño_total = fin - inicio
         datos_recibidos = b''
+        nombre_fragmento = f"{video_nombre}_{inicio}_{fin}.mp4"
 
         try:
-            while len(datos_recibidos) < tamaño_total:
-                data = sock.recv(1024)
-                if not data:
-                    break
-                datos_recibidos += data
+            with open(nombre_fragmento, "wb") as f:
+                while len(datos_recibidos) < tamaño_total:
+                    data = sock.recv(1024)
+                    if not data:
+                        break
+                    datos_recibidos += data
+                    f.write(data)
             print(f"Recibido trozo del video {video_nombre} de {inicio} a {fin}, tamaño: {len(datos_recibidos)} bytes")
+            return nombre_fragmento
         except Exception as e:
             print(f"Error al recibir trozo del video: {e}")
+            return None
+
+    def combinar_fragmentos(self, video_nombre, fragmentos):
+        with open(f"{video_nombre}_completo.mp4", "wb") as video_final:
+            for fragmento in sorted(fragmentos):
+                with open(fragmento, "rb") as f:
+                    video_final.write(f.read())
+                os.remove(fragmento)
+            print(f"Video {video_nombre} ensamblado correctamente")
 
 if __name__ == "__main__":
     cliente = Cliente('192.168.0.146', 8000)

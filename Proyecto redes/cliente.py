@@ -4,9 +4,12 @@ import math
 import os
 
 class Cliente:
-    def __init__(self, servidor_principal_host, servidor_principal_puerto):
+    def __init__(self, servidor_principal_host, servidor_principal_puerto, carpeta_destino):
         self.servidor_principal_host = servidor_principal_host
         self.servidor_principal_puerto = servidor_principal_puerto
+        self.carpeta_destino = carpeta_destino
+        if not os.path.exists(self.carpeta_destino):
+            os.makedirs(self.carpeta_destino)
 
     def solicitar_lista_servidores(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -82,15 +85,17 @@ class Cliente:
             return None
 
     def combinar_fragmentos(self, video_nombre, fragmentos):
-        with open(f"{video_nombre}_completo.mp4", "wb") as video_final:
+        ruta_video_completo = os.path.join(self.carpeta_destino, f"{video_nombre}_completo.mp4")
+        with open(ruta_video_completo, "wb") as video_final:
             for fragmento in sorted(fragmentos):
                 with open(fragmento, "rb") as f:
                     video_final.write(f.read())
                 os.remove(fragmento)
-            print(f"Video {video_nombre} ensamblado correctamente")
+            print(f"Video {video_nombre} ensamblado correctamente en {ruta_video_completo}")
 
 if __name__ == "__main__":
-    cliente = Cliente('192.168.0.146', 8000)
+    carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'  # Cambia esto por la ruta de la carpeta deseada
+    cliente = Cliente('192.168.0.146', 8000, carpeta_destino)
     lista_servidores = cliente.solicitar_lista_servidores()
     videos_disponibles = cliente.mostrar_servidores_y_videos(lista_servidores)
     video_elegido = cliente.elegir_video(videos_disponibles)

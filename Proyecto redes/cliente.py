@@ -2,6 +2,7 @@ import socket
 import json
 import math
 import os
+import time
 
 class Cliente:
     def __init__(self, servidor_principal_host, servidor_principal_puerto, carpeta_destino):
@@ -49,19 +50,23 @@ class Cliente:
             mensajes.append((ip, puerto, mensaje))
 
         fragmentos = []
+        inicio_tiempo = time.time()
         for ip, puerto, mensaje in mensajes:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((ip, int(puerto)))
                 s.sendall(mensaje.encode())
-                nombre_fragmento = self.recibir_trozo_video(s, mensaje)
+                nombre_fragmento = self.recibir_trozo_video(s, video_nombre, mensaje, ip, puerto)
                 if nombre_fragmento:
                     fragmentos.append(nombre_fragmento)
+        fin_tiempo = time.time()
+        duracion = fin_tiempo - inicio_tiempo
+        print(f"Tiempo total de transferencia: {duracion:.2f} segundos")
 
+        # Combinar los fragmentos recibidos en un único archivo de video
         self.combinar_fragmentos(video_nombre, fragmentos)
 
-    def recibir_trozo_video(self, sock, mensaje):
+    def recibir_trozo_video(self, sock, video_nombre, mensaje, ip, puerto):
         partes = mensaje.split(" ")
-        video_nombre = partes[0]
         inicio = int(partes[1])
         fin = int(partes[2])
         tamaño_total = fin - inicio
@@ -76,10 +81,10 @@ class Cliente:
                         break
                     datos_recibidos += data
                     f.write(data)
-            print(f"Recibido trozo del video {video_nombre} de {inicio} a {fin}, tamaño: {len(datos_recibidos)} bytes")
+            print(f"Recibido trozo del video {video_nombre} de {inicio} a {fin}, tamaño: {len(datos_recibidos)} bytes desde {ip}:{puerto}")
             return nombre_fragmento
         except Exception as e:
-            print(f"Error al recibir trozo del video: {e}")
+            print(f"Error al recibir trozo del video desde {ip}:{puerto}: {e}")
             return None
 
     def combinar_fragmentos(self, video_nombre, fragmentos):
@@ -92,11 +97,11 @@ class Cliente:
             print(f"Video {video_nombre} ensamblado correctamente en {ruta_video_completo}")
 
 if __name__ == "__main__":
-    carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'
+    carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'  # Cambia esto por la ruta de la carpeta deseada
     cliente = Cliente('192.168.0.146', 8000, carpeta_destino)
     lista_servidores = cliente.solicitar_lista_servidores()
     videos_disponibles = cliente.mostrar_servidores_y_videos(lista_servidores)
     video_elegido = cliente.elegir_video(videos_disponibles)
     servidores = videos_disponibles[video_elegido]
-    video_tamaño = servidores[0][2]
+    video_tamaño = servidores[0][2]  # Asumimos que el tamaño del video es el mismo en todos los servidores
     cliente.enviar_mensajes_a_servidores(servidores, video_elegido, video_tamaño)

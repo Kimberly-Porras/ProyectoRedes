@@ -12,6 +12,8 @@ class ServidorVideo:
         self.puerto_servidor_principal = int(puerto_servidor_principal)
         self.sock_principal = None
         self.heartbeat_interval = 10  # Intervalo de tiempo para enviar heartbeats
+        self.lista_videos = self.obtener_lista_videos()  # Inicializar la lista de videos
+        self.polling_interval = 10  # Intervalo de tiempo para el sondeo de cambios en la carpeta
 
     def iniciar(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,6 +25,7 @@ class ServidorVideo:
         threading.Thread(target=self.escuchar_conexiones).start()
         self.conectar_servidor_principal()
         threading.Thread(target=self.verificar_servidor_principal).start()
+        threading.Thread(target=self.monitorear_carpeta_videos).start()
 
     def conectar_servidor_principal(self):
         while True:
@@ -45,8 +48,17 @@ class ServidorVideo:
                 ruta = os.path.join(self.ruta_videos, archivo)
                 tamaño = os.path.getsize(ruta)
                 videos.append({'nombre': archivo, 'tamaño': tamaño, 'ruta': ruta})
-        print(f"Lista de videos obtenida: {videos}")
         return videos
+
+    def notificar_cambio_videos(self):
+        try:
+            if self.sock_principal:
+                lista_videos = self.obtener_lista_videos()
+                mensaje = f'ACTUALIZAR_VIDEOS,{self.puerto},{json.dumps(lista_videos)}'
+                self.sock_principal.send(mensaje.encode())
+                print("Notificación de cambio de videos enviada al servidor principal")
+        except Exception as e:
+            print(f"Error notificando cambio de videos: {e}")
 
     def escuchar_conexiones(self):
         while True:
@@ -115,8 +127,15 @@ class ServidorVideo:
                 self.sock_principal = None
                 time.sleep(30)
 
+    def monitorear_carpeta_videos(self):
+        while True:
+            time.sleep(self.polling_interval)
+            nueva_lista_videos = self.obtener_lista_videos()
+            if nueva_lista_videos != self.lista_videos:
+                self.lista_videos = nueva_lista_videos
+                self.notificar_cambio_videos()
 
-                
+
 if __name__ == "__main__":
     puerto = 12347
     ruta_videos = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Servidor1\videos'

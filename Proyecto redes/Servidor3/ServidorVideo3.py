@@ -11,9 +11,9 @@ class ServidorVideo:
         self.ip_servidor_principal = ip_servidor_principal
         self.puerto_servidor_principal = int(puerto_servidor_principal)
         self.sock_principal = None
-        self.heartbeat_interval = 10  # Intervalo de tiempo para enviar heartbeats
-        self.lista_videos = self.obtener_lista_videos()  # Inicializar la lista de videos
-        self.polling_interval = 10  # Intervalo de tiempo para el sondeo de cambios en la carpeta
+        self.heartbeat_interval = 10
+        self.lista_videos = self.obtener_lista_videos()
+        self.polling_interval = 10
 
     def iniciar(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -36,10 +36,10 @@ class ServidorVideo:
                 mensaje = f'NUEVO_SERVIDOR,{self.puerto},{json.dumps(lista_videos)}'
                 self.sock_principal.send(mensaje.encode())
                 print(f"Conectado al servidor principal en {self.ip_servidor_principal}:{self.puerto_servidor_principal}")
-                break  # Salir del bucle si la conexión fue exitosa
+                break
             except Exception as e:
                 print(f"Error conectando al servidor principal: {e}")
-                time.sleep(5)  # Intentar reconectar después de 5 segundos
+                time.sleep(5)
 
     def obtener_lista_videos(self):
         videos = []
@@ -106,7 +106,7 @@ class ServidorVideo:
                         break
                     conn.sendall(trozo)
                     inicio += tamano_chunk
-                    time.sleep(0.01)  # Añadir una pequeña pausa para evitar saturar el socket
+                    time.sleep(0.01)
                     print(f"Enviado trozo de tamaño {tamano_chunk} del video {video_nombre}")
         except Exception as e:
             print(f"Error enviando trozo del video: {e}")

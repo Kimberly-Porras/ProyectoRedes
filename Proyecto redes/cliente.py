@@ -3,7 +3,7 @@ import json
 import math
 import os
 import time
-
+#intento de arreglo
 class Cliente:
     def __init__(self, servidor_principal_host, servidor_principal_puerto, carpeta_destino):
         self.servidor_principal_host = servidor_principal_host

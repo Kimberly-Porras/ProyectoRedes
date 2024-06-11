@@ -63,6 +63,7 @@ class ServidorVideo:
     def escuchar_conexiones(self):
         while True:
             conn, addr = self.sock.accept()
+            print(f"Conexión establecida con {addr[0]}:{addr[1]}")
             threading.Thread(target=self.manejar_conexion, args=(conn, addr)).start()
 
     def manejar_conexion(self, conn, addr):
@@ -78,7 +79,7 @@ class ServidorVideo:
                         try:
                             inicio = int(partes[1])
                             fin = int(partes[2])
-                            self.enviar_trozo_video(conn, video_nombre, inicio, fin)
+                            self.enviar_trozo_video(conn, video_nombre, inicio, fin, addr)
                         except ValueError as e:
                             print(f"Error en los índices de video: {e}")
                     else:
@@ -91,12 +92,13 @@ class ServidorVideo:
             conn.close()
             print(f"Conexión cerrada con {addr}")
 
-    def enviar_trozo_video(self, conn, video_nombre, inicio, fin):
+    def enviar_trozo_video(self, conn, video_nombre, inicio, fin, addr):
         ruta_video = os.path.join(self.ruta_videos, video_nombre)
         if not os.path.exists(ruta_video):
             print(f"Video no encontrado: {video_nombre}")
             return
         try:
+            inicio_tiempo = time.time()
             with open(ruta_video, 'rb') as f:
                 f.seek(inicio)
                 while inicio < fin:
@@ -107,7 +109,10 @@ class ServidorVideo:
                     conn.sendall(trozo)
                     inicio += tamano_chunk
                     time.sleep(0.01)
-                    print(f"Enviado trozo de tamaño {tamano_chunk} del video {video_nombre}")
+                    print(f"Enviado trozo de tamaño {tamano_chunk} del video {video_nombre} a {addr[0]}:{addr[1]}")
+            fin_tiempo = time.time()
+            duracion = fin_tiempo - inicio_tiempo
+            print(f"Tiempo de envío al cliente {addr[0]}:{addr[1]}: {duracion:.2f} segundos")
         except Exception as e:
             print(f"Error enviando trozo del video: {e}")
 
@@ -139,8 +144,7 @@ class ServidorVideo:
 if __name__ == "__main__":
     puerto = 12347
     ruta_videos = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Servidor1\videos'
-    ip_servidor_principal = '192.168.0.146'
+    ip_servidor_principal = '172.17.45.235'
     puerto_servidor_principal = 8000
     servidor_video = ServidorVideo(puerto, ruta_videos, ip_servidor_principal, puerto_servidor_principal)
     servidor_video.iniciar()
-

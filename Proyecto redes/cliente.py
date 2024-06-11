@@ -97,7 +97,7 @@ class Cliente:
 
 if __name__ == "__main__":
     carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'
-    cliente = Cliente('192.168.0.146', 8000, carpeta_destino)
+    cliente = Cliente('172.17.45.235', 8000, carpeta_destino)
     lista_servidores = cliente.solicitar_lista_servidores()
     videos_disponibles = cliente.mostrar_servidores_y_videos(lista_servidores)
     video_elegido = cliente.elegir_video(videos_disponibles)

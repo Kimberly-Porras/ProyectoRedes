@@ -4,10 +4,10 @@ import json
 
 class ServidorPrincipal:
     def __init__(self, ip, puerto):
-        # Inicializa el servidor principal con la IP y el puerto especificados
+        # Inicializa el servidor principal con la IP y el puerto
         self.ip = ip
         self.puerto = int(puerto)
-        # Diccionario para almacenar los servidores de vídeo registrados
+        # Almacena los servidores de vídeo registrados
         self.servidores = {}
 
     def iniciar(self):
@@ -34,7 +34,6 @@ class ServidorPrincipal:
                 datos = conn.recv(4096).decode()
                 if datos:
                     if datos == 'heartbeat':
-                        # Omitir la impresión de los mensajes de heartbeat
                         continue
                     print(f"Datos recibidos de {addr}: {datos}")
                     if datos.startswith('NUEVO_SERVIDOR'):
@@ -48,7 +47,6 @@ class ServidorPrincipal:
         except Exception as e:
             print(f"Error al manejar conexión: {e}")
         finally:
-            # Cierra la conexión cuando se termina de manejar
             conn.close()
             print(f"Conexión cerrada con {addr}")
 
@@ -59,7 +57,7 @@ class ServidorPrincipal:
             puerto = int(partes[1])
             lista_videos = json.loads(partes[2])
             ip_servidor = addr[0]
-            # Registra el servidor de vídeo en el diccionario
+            # Registra el servidor de vídeo en la lista de servidores
             self.servidores[(ip_servidor, puerto)] = {'videos': lista_videos}
             print(f"Servidor registrado: {ip_servidor}:{puerto} con videos: {lista_videos}")
         except Exception as e:
@@ -67,7 +65,7 @@ class ServidorPrincipal:
 
     def enviar_lista_servidores(self, conn):
         try:
-            # Convierte el diccionario de servidores a un formato adecuado para enviar
+            # Convierte la lista de servidores a un formato adecuado para enviar
             servidores_str = {f"{ip}:{puerto}": data for (ip, puerto), data in self.servidores.items()}
             data = json.dumps(servidores_str)
             # Envía la lista de servidores al cliente
@@ -77,6 +75,5 @@ class ServidorPrincipal:
             print(f"Error enviando lista de servidores: {e}")
 
 if __name__ == "__main__":
-    # Crea una instancia del servidor principal y lo inicia
     servidor_principal = ServidorPrincipal('192.168.0.146', 8000)
     servidor_principal.iniciar()

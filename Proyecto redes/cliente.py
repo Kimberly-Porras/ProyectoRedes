@@ -62,7 +62,6 @@ class Cliente:
         duracion = fin_tiempo - inicio_tiempo
         print(f"Tiempo total de transferencia: {duracion:.2f} segundos")
 
-        # Combinar los fragmentos recibidos en un único archivo de video
         self.combinar_fragmentos(video_nombre, fragmentos)
 
     def recibir_trozo_video(self, sock, video_nombre, mensaje, ip, puerto):
@@ -97,11 +96,11 @@ class Cliente:
             print(f"Video {video_nombre} ensamblado correctamente en {ruta_video_completo}")
 
 if __name__ == "__main__":
-    carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'  # Cambia esto por la ruta de la carpeta deseada
+    carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'
     cliente = Cliente('192.168.0.146', 8000, carpeta_destino)
     lista_servidores = cliente.solicitar_lista_servidores()
     videos_disponibles = cliente.mostrar_servidores_y_videos(lista_servidores)
     video_elegido = cliente.elegir_video(videos_disponibles)
     servidores = videos_disponibles[video_elegido]
-    video_tamaño = servidores[0][2]  # Asumimos que el tamaño del video es el mismo en todos los servidores
+    video_tamaño = servidores[0][2]
     cliente.enviar_mensajes_a_servidores(servidores, video_elegido, video_tamaño)

@@ -75,5 +75,5 @@ class ServidorPrincipal:
             print(f"Error enviando lista de servidores: {e}")
 
 if __name__ == "__main__":
-    servidor_principal = ServidorPrincipal('192.168.0.146', 8000)
+    servidor_principal = ServidorPrincipal('192.168.1.38', 8000)
     servidor_principal.iniciar()

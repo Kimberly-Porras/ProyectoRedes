@@ -144,8 +144,8 @@ class ServidorVideo:
 
 if __name__ == "__main__":
     puerto = 12346
-    ruta_videos = r'C:\Users\User\Desktop\Proyecto redes\Servidor2\video'
-    ip_servidor_principal = '192.168.0.146'
+    ruta_videos = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Servidor2\video'
+    ip_servidor_principal = '192.168.1.38'
     puerto_servidor_principal = 8000
     servidor_video = ServidorVideo(puerto, ruta_videos, ip_servidor_principal, puerto_servidor_principal)
     servidor_video.iniciar()

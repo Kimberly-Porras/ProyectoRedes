@@ -2,8 +2,9 @@ import socket
 import json
 import math
 import os
+import threading
 import time
-#intento de arreglo
+
 class Cliente:
     def __init__(self, servidor_principal_host, servidor_principal_puerto, carpeta_destino):
         self.servidor_principal_host = servidor_principal_host
@@ -50,21 +51,23 @@ class Cliente:
             mensajes.append((ip, puerto, mensaje))
 
         fragmentos = []
+        threads = []
         inicio_tiempo = time.time()
         for ip, puerto, mensaje in mensajes:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((ip, int(puerto)))
-                s.sendall(mensaje.encode())
-                nombre_fragmento = self.recibir_trozo_video(s, video_nombre, mensaje, ip, puerto)
-                if nombre_fragmento:
-                    fragmentos.append(nombre_fragmento)
+            thread = threading.Thread(target=self.recibir_trozo_video, args=(ip, puerto, video_nombre, mensaje, fragmentos))
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+        
         fin_tiempo = time.time()
         duracion = fin_tiempo - inicio_tiempo
         print(f"Tiempo total de transferencia: {duracion:.2f} segundos")
 
         self.combinar_fragmentos(video_nombre, fragmentos)
 
-    def recibir_trozo_video(self, sock, video_nombre, mensaje, ip, puerto):
+    def recibir_trozo_video(self, ip, puerto, video_nombre, mensaje, fragmentos):
         partes = mensaje.split(" ")
         inicio = int(partes[1])
         fin = int(partes[2])
@@ -73,18 +76,22 @@ class Cliente:
         nombre_fragmento = f"{video_nombre}_{inicio}_{fin}.mp4"
 
         try:
-            with open(nombre_fragmento, "wb") as f:
-                while len(datos_recibidos) < tamaño_total:
-                    data = sock.recv(1024)
-                    if not data:
-                        break
-                    datos_recibidos += data
-                    f.write(data)
-            print(f"Recibido trozo del video {video_nombre} de {inicio} a {fin}, tamaño: {len(datos_recibidos)} bytes desde {ip}:{puerto}")
-            return nombre_fragmento
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((ip, int(puerto)))
+                sock.sendall(mensaje.encode())
+
+                with open(nombre_fragmento, "wb") as f:
+                    while len(datos_recibidos) < tamaño_total:
+                        data = sock.recv(1024)
+                        if not data:
+                            break
+                        datos_recibidos += data
+                        f.write(data)
+
+                fragmentos.append(nombre_fragmento)
+                print(f"Recibido trozo del video {video_nombre} de {inicio} a {fin}, tamaño: {len(datos_recibidos)} bytes desde {ip}:{puerto}")
         except Exception as e:
             print(f"Error al recibir trozo del video desde {ip}:{puerto}: {e}")
-            return None
 
     def combinar_fragmentos(self, video_nombre, fragmentos):
         ruta_video_completo = os.path.join(self.carpeta_destino, f"{video_nombre}_completo.mp4")
@@ -97,7 +104,7 @@ class Cliente:
 
 if __name__ == "__main__":
     carpeta_destino = r'C:\Users\joxan\OneDrive\Documentos\GitHub\ProyectoRedes\Proyecto redes\Videos Descargados'
-    cliente = Cliente('172.17.45.235', 8000, carpeta_destino)
+    cliente = Cliente('192.168.1.38', 8000, carpeta_destino)
     lista_servidores = cliente.solicitar_lista_servidores()
     videos_disponibles = cliente.mostrar_servidores_y_videos(lista_servidores)
     video_elegido = cliente.elegir_video(videos_disponibles)
